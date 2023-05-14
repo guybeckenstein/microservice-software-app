@@ -1,11 +1,22 @@
 from flask import Flask, request, jsonify
 import requests
 
-app = Flask(__name__)   # Global variable for running flask (requests & responses)
-dishes = dict()         # Global variable for dishes
-dish_id = 0             # Global variable for dishes
-meals = dict()          # Global variable for meals
-meal_id = 0             # Global variable for meals
+# Constant global Variables
+NAME = 'name'               # For dishes
+ID = 'ID'                   # For dishes
+SIZE = 'size'               # For dishes
+CAL = 'cal'                 # For dishes
+SODIUM = 'sodium'           # For dishes
+SUGAR = 'sugar'             # For dishes
+APPETIZER = 'appetizer'     # For meals
+MAIN = 'main'               # For meals
+DESSERT = 'dessert'         # For meals
+# Global variables
+app = Flask(__name__)       # For running flask (requests & responses)
+dishes = dict()             # For dishes
+dish_id = 0                 # For dishes
+meals = dict()              # For meals
+meal_id = 0                 # For meals
 
 API_KEY = 'MktCMe6vJqb/xCbZ10IBgA==5utKBDSANyr1ZXUN'
 
@@ -44,8 +55,8 @@ def create_dish():
     if request.content_type != 'application/json':
         return str(0), str(415)
 
-    dish_name = request.json.get('name', None)
-    if dish_name is None:                # Bad request: 'name' parameter was not specified
+    dish_name = request.json.get(NAME, None)
+    if dish_name is None:                # Bad request: NAME parameter was not specified
         return str(-1), str(400)
     response_json = get_dish_nutrition_info(dish_name)
     if response_json is False:     # Bad request: does not recognize this dish name
@@ -60,12 +71,12 @@ def create_dish():
         dish_id += 1
         calories, serving_size_g, sodium_mg, sugar_g = calculate_portions_values_sum(response_json)
         dish = {
-            'name': dish_name,
-            'ID': dish_id,
-            'cal': calories,
-            'size': serving_size_g,
-            'sodium': sodium_mg,
-            'sugar': sugar_g
+            NAME: dish_name,
+            ID: dish_id,
+            CAL: calories,
+            SIZE: serving_size_g,
+            SODIUM: sodium_mg,
+            SUGAR: sugar_g
         }
         dishes[str(dish_id)] = dish
         return str(dish_id), str(response_code)
@@ -74,7 +85,7 @@ def create_dish():
 def validate_dish_json_parameters(dish_name, response_json):
     """
     :param dish_name: Name of the dish we are adding, given in the original request. Type: str
-    :param response_json: Response list of the original request (including query parameter 'name'), given by Ninjas API
+    :param response_json: Response list of the original request (including query parameter NAME), given by Ninjas API
     :return: (None, 201) if the request is valid, (-2, 400) if the dish already exists, (-3, 400) if the dish does not
     exist in Ninjas API
     """
@@ -93,15 +104,15 @@ def name_to_id_generator(dish_name, values):
     :return: Integer value of a dish or meal ID - positive if found, -1 if not
     """
     for value in values.values():
-        if value['name'] == dish_name:
-            return value['ID']
+        if value[NAME] == dish_name:
+            return value[ID]
     return -1
 
 
 def get_dish_nutrition_info(dish_name):
     """
     :param dish_name: Name of the dish we are adding, given in the original request. Type: str
-    :return: Response for the original request (including quey parameter 'name'), given by Ninjas API. Type: JSON
+    :return: Response for the original request (including quey parameter NAME), given by Ninjas API. Type: JSON
     """
     api_url = f'http://api.api-ninjas.com/v1/nutrition?query={dish_name}'
     response = requests.get(api_url, headers={'X-Api-Key': API_KEY})
@@ -181,20 +192,20 @@ def delete_dish(dish_request):
     # Set the dish to null in all meals if it is part of a meal
     for meal in meals.values():
         is_dish_in_meal = False
-        if meal['appetizer'] == str(dish_id):
-            meal['appetizer'] = None
+        if meal[APPETIZER] == str(dish_id):
+            meal[APPETIZER] = None
             is_dish_in_meal = True
-        elif meal['main'] == str(dish_id):
-            meal['main'] = None
+        elif meal[MAIN] == str(dish_id):
+            meal[MAIN] = None
             is_dish_in_meal = True
-        elif meal['dessert'] == str(dish_id):
-            meal['dessert'] = None
+        elif meal[DESSERT] == str(dish_id):
+            meal[DESSERT] = None
             is_dish_in_meal = True
         # Update meal values
         if is_dish_in_meal is True:
-            meals[str(meal_id)]['cal'] -= dishes[str(dish_id)]['cal']
-            meals[str(meal_id)]['sodium'] -= dishes[str(dish_id)]['sodium']
-            meals[str(meal_id)]['sugar'] -= dishes[str(dish_id)]['sugar']
+            meals[str(meal_id)][CAL] -= dishes[str(dish_id)][CAL]
+            meals[str(meal_id)][SODIUM] -= dishes[str(dish_id)][SODIUM]
+            meals[str(meal_id)][SUGAR] -= dishes[str(dish_id)][SUGAR]
     # Remove dish from dishes
     dishes.pop(str(dish_id))
 
@@ -216,13 +227,12 @@ def create_meal():
         return str(0), str(415)
 
     # Get new meal values from JSON
-    meal_name = request.json.get('name', None)
-    appetizer_id = request.json.get('appetizer', None)
-    main_id = request.json.get('main', None)
-    dessert_id = request.json.get('dessert', None)
+    meal_name = request.json.get(NAME, None)
+    appetizer_id = request.json.get(APPETIZER, None)
+    main_id = request.json.get(MAIN, None)
+    dessert_id = request.json.get(DESSERT, None)
     # Bad request: one of the required parameters was not specified correctly
-    if (meal_name is None or meal_name == "") or (appetizer_id is None or appetizer_id == "") \
-            or (main_id is None or main_id == "") or (dessert_id is None or dessert_id == ""):
+    if (meal_name is None) or (appetizer_id is None) or (main_id is None) or (dessert_id is None):
         return str(-1), str(400)
     # Bad request: a meal of the given name already exists
     if name_to_id_generator(meal_name, meals) != -1:
@@ -241,30 +251,21 @@ def create_meal():
     str_dessert = str(dessert_id)
 
     # Sum of dishes' values in the meal
-    calories = dishes[str_main]['cal'] + dishes[str_appetizer]['cal'] + dishes[str_dessert]['cal']
-    sodium = dishes[str_main]['sodium'] + dishes[str_appetizer]['sodium'] + dishes[str_dessert]['sodium']
-    sugar = dishes[str_main]['sugar'] + dishes[str_appetizer]['sugar'] + dishes[str_dessert]['sugar']
+    calories = dishes[str_main][CAL] + dishes[str_appetizer][CAL] + dishes[str_dessert][CAL]
+    sodium = dishes[str_main][SODIUM] + dishes[str_appetizer][SODIUM] + dishes[str_dessert][SODIUM]
+    sugar = dishes[str_main][SUGAR] + dishes[str_appetizer][SUGAR] + dishes[str_dessert][SUGAR]
     meal = {
-        'name': meal_name,
-        'ID': meal_id,
-        'appetizer': appetizer_id,
-        'main': main_id,
-        'dessert': dessert_id,
-        'cal': calories,
-        'sodium': sodium,
-        'sugar': sugar
+        NAME: meal_name,
+        ID: meal_id,
+        APPETIZER: appetizer_id,
+        MAIN: main_id,
+        DESSERT: dessert_id,
+        CAL: calories,
+        SODIUM: sodium,
+        SUGAR: sugar
     }
     meals[str(meal_id)] = meal
-    return jsonify(meal_id), 201
-
-
-@app.route('/meals', methods=['GET'])
-def get_meals():
-    """
-    GET request of /meals endpoint
-    :return: JSON file of all meals
-    """
-    return jsonify(meals)
+    return str(meal_id), str(201)
 
 
 @app.route('/meals', methods=['GET'])
@@ -275,9 +276,37 @@ def get_meals():
     The response are all those meals that conform to the diets.
     If the <diet> specifies `cal=num1, sodium=num2, sugar=num3`
     then all the meals returned have calories <= num1, sodium <= num2, and sugar <=num3.
-    :return: JSON file of all meals
+    :return: JSON file of all meals. Status code to return was not written in the assignment
     """
-    return jsonify(meals)
+
+    # Get new meal values from JSON
+    diet_name = request.args.get('diet', None, type=str)
+    if diet_name is None:
+        return jsonify(meals)
+    else:
+        # TODO: 1. Connect to 'Diets API'
+        # TODO: 2. Make a request: `GET /diet/<diet_name>`
+        # TODO: 3. Get the relevant values from the JSON that was returned from the GET request
+        # Get diet values from JSON
+        cal_max = request.json.get(CAL, None)
+        sodium_max = request.json.get(SODIUM, None)
+        sugar_max = request.json.get(SUGAR, None)
+        if cal_max is None:
+            raise ValueError('ERROR: Diet JSON does not contain `cal` value!')
+        elif sodium_max is None:
+            raise ValueError('ERROR: Diet JSON does not contain `sodium` value!')
+        elif sugar_max is None:
+            raise ValueError('ERROR: Diet JSON does not contain `sugar` value!')
+        # TODO: 4. Filter the meals dictionary by diet maximum cal rate, maximum sodium rate, and maximum sugar rate
+        # Filter meals
+        filtered_meals = {
+            meal_id: meal_details for meal_id, meal_details in meals.items() if
+            (meal_details[CAL] <= cal_max) and
+            (meal_details[SODIUM] <= sodium_max) and
+            (meal_details[SUGAR] <= sugar_max)
+        }
+        # TODO: 5. Test
+        return jsonify(filtered_meals)
 
 
 @app.route('/meals/<meal_request>', methods=['GET'])
@@ -289,7 +318,7 @@ def get_meal(meal_request):
     don't exist
     """
     global meals
-    if not meal_request:
+    if (meal_request is None) or (meal_request == ""):
         # If neither the meal ID nor a meal name is specified, the GET or DELETE
         # request returns the response -1 with error code 400 (Bad request).
         return str(-1), str(400)
@@ -307,13 +336,6 @@ def get_meal(meal_request):
             # the GET or DELETE request returns the response -5 with error code 404 (Not Found)
             return str(-5), str(404)
     return jsonify(meals[str(meal_id)]), str(200)
-
-
-@app.route('/meals/', methods=['GET', 'DELETE'])
-def get_or_delete_meal():
-    # If neither the meal ID nor a meal name is specified, the GET or DELETE
-    # request returns the response -1 with error code 400 (Bad request).
-    return str(-1), str(400)
 
 
 @app.route('/meals/<meal_request>', methods=['DELETE'])
@@ -372,13 +394,12 @@ def update_meal(meal_request):
         return str(-5), str(404)
 
     # Get new meal values from JSON
-    meal_name = request.json.get('name', None)
-    appetizer_id = request.json.get('appetizer', None)
-    main_id = request.json.get('main', None)
-    dessert_id = request.json.get('dessert', None)
+    meal_name = request.json.get(NAME, None)
+    appetizer_id = request.json.get(APPETIZER, None)
+    main_id = request.json.get(MAIN, None)
+    dessert_id = request.json.get(DESSERT, None)
     # Bad request: one of the required parameters was not specified correctly
-    if (meal_name is None or meal_name == "") or (appetizer_id is None or appetizer_id == "") \
-            or (main_id is None or main_id == "") or (dessert_id is None or dessert_id == ""):
+    if (meal_name is None) or (appetizer_id is None) or (main_id is None) or (dessert_id is None):
         return str(-1), str(400)
 
     # Validate dishes
@@ -386,20 +407,20 @@ def update_meal(meal_request):
         return str(-5), str(404)
 
     # New dishes in meal or new dish name
-    meals[str(meal_id)]['name'] = meal_name
-    meals[str(meal_id)]['appetizer'] = appetizer_id
-    meals[str(meal_id)]['main'] = main_id
-    meals[str(meal_id)]['dessert'] = dessert_id
+    meals[str(meal_id)][NAME] = meal_name
+    meals[str(meal_id)][APPETIZER] = appetizer_id
+    meals[str(meal_id)][MAIN] = main_id
+    meals[str(meal_id)][DESSERT] = dessert_id
 
     # Sum of dishes' values in the meal
-    calories = dishes[str(appetizer_id)]['cal'] + dishes[str(main_id)]['cal'] + dishes[str(dessert_id)]['cal']
-    sodium = dishes[str(appetizer_id)]['sodium'] + dishes[str(main_id)]['sodium'] + dishes[str(dessert_id)]['sodium']
-    sugar = dishes[str(appetizer_id)]['sugar'] + dishes[str(main_id)]['sugar'] + dishes[str(dessert_id)]['sugar']
+    calories = dishes[str(appetizer_id)][CAL] + dishes[str(main_id)][CAL] + dishes[str(dessert_id)][CAL]
+    sodium = dishes[str(appetizer_id)][SODIUM] + dishes[str(main_id)][SODIUM] + dishes[str(dessert_id)][SODIUM]
+    sugar = dishes[str(appetizer_id)][SUGAR] + dishes[str(main_id)][SUGAR] + dishes[str(dessert_id)][SUGAR]
 
     # Update dictionary
-    meals[str(meal_id)]['cal'] = calories
-    meals[str(meal_id)]['sodium'] = sodium
-    meals[str(meal_id)]['sugar'] = sugar
+    meals[str(meal_id)][CAL] = calories
+    meals[str(meal_id)][SODIUM] = sodium
+    meals[str(meal_id)][SUGAR] = sugar
     return str(meal_id), str(200)
 
 

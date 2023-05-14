@@ -5,12 +5,12 @@ FROM python:3.9-slim-buster
 WORKDIR /app
 
 # Copy the current directory contents into the container at /app
-COPY api/meals /app
+COPY . /app
 
 RUN pip install flask requests
 
-# Make port 8000 available to the world outside this container
-EXPOSE 8000
+# Make port 5001 available to the world outside this container
+EXPOSE 5001
 
 # Define environment variable
 ENV NAME World
