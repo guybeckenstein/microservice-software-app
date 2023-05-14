@@ -1,6 +1,10 @@
-FROM ubuntu:latest
-LABEL authors="guybe"
+FROM nginx
 
-# TODO: https://hub.docker.com/_/nginx
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY site /usr/share/nginx/html
 
-ENTRYPOINT ["top", "-b"]
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+
+# ChatGPT
