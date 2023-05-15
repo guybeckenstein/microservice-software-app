@@ -1,0 +1,52 @@
+version: '3'
+services:
+  meals:
+    build:
+      context: ./Meals
+      dockerfile: Dockerfile
+    ports:
+      - 5001:5001
+    depends_on:
+      - mongodb
+    restart: unless-stopped  # Restart the container unless explicitly stopped
+    volumes:
+      - meals_data:/app/data  # Mount a volume to persist meals data
+
+  diets:
+    build:
+      context: ./Diets
+      dockerfile: Dockerfile
+    ports:
+      - 5002:5002
+    depends_on:
+      - mongodb
+    restart: unless-stopped  # Restart the container unless explicitly stopped
+    volumes:
+      - diets_data:/app/data  # Mount a volume to persist diets data
+
+  mongodb:
+    build:
+      context: ./MongoDB
+      dockerfile: Dockerfile
+    ports:
+      - 27017:27017
+    restart: unless-stopped  # Restart the container unless explicitly stopped
+    volumes:
+      - mongodb_data:/data/db  # Mount a volume to persist MongoDB data
+
+  nginx:
+    build:
+      context: ./NGINX
+      dockerfile: Dockerfile
+    ports:
+      - 9090:80
+    depends_on:
+      - meals
+      - diets
+      - mongodb
+    restart: unless-stopped
+
+volumes:
+  meals_data:  # Define a named volume for meals data
+  diets_data:  # Define a named volume for diets data
+  mongodb_data:  # Define a named volume for MongoDB data
