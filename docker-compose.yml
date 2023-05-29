@@ -5,7 +5,7 @@ services:
       context: ./Meals
       dockerfile: Dockerfile
     ports:
-      - 5001:5001
+      - "5001:5001"
     depends_on:
       - mongodb
     restart: unless-stopped  # Restart the container unless explicitly stopped
@@ -17,7 +17,7 @@ services:
       context: ./Diets
       dockerfile: Dockerfile
     ports:
-      - 5002:5002
+      - "5002:5002"
     depends_on:
       - mongodb
     restart: unless-stopped  # Restart the container unless explicitly stopped
@@ -29,7 +29,7 @@ services:
       context: ./MongoDB
       dockerfile: Dockerfile
     ports:
-      - 27017:27017
+      - "27017:27017"
     restart: unless-stopped  # Restart the container unless explicitly stopped
     volumes:
       - mongodb_data:/data/db  # Mount a volume to persist MongoDB data
@@ -39,7 +39,7 @@ services:
       context: ./NGINX
       dockerfile: Dockerfile
     ports:
-      - 9090:80
+      - "80:80"
     depends_on:
       - meals
       - diets

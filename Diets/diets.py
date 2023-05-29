@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from pymongo import MongoClient  # TODO: make this API interact with the MongoDB microservice
+#from pymongo import MongoClient  # TODO: make this API interact with the MongoDB microservice
 
 # Constant global Variables
 NAME = 'name'               # For diets

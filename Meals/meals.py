@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
+import json
 import requests
-from pymongo import MongoClient  # TODO: make this API interact with the MongoDB microservice
+#from pymongo import MongoClient  # TODO: make this API interact with the MongoDB microservice
 
 # Constant global Variables
 NAME = 'name'               # For dishes
@@ -285,28 +286,28 @@ def get_meals():
     if diet_name is None:
         return jsonify(meals)
     else:
-        # TODO: 1. Connect to 'Diets API'
-        # TODO: 2. Make a request: `GET /diet/<diet_name>`
-        # TODO: 3. Get the relevant values from the JSON that was returned from the GET request
+        # 1. Connect to 'Diets API'
+        # 2. Make a request: `GET /diet/<diet_name>`
+        # 3. Get the relevant values from the JSON that was returned from the GET request
         # Get diet values from JSON
-        cal_max = request.json.get(CAL, None)
-        sodium_max = request.json.get(SODIUM, None)
-        sugar_max = request.json.get(SUGAR, None)
-        if cal_max is None:
+        response = requests.get(f'http://localhost:5002/diet/{diet_name}')
+        diets_service_response_dict = json.loads(response.content)
+        if CAL not in diets_service_response_dict.keys():
             raise ValueError('ERROR: Diet JSON does not contain `cal` value!')
-        elif sodium_max is None:
+        elif SODIUM not in diets_service_response_dict.keys():
             raise ValueError('ERROR: Diet JSON does not contain `sodium` value!')
-        elif sugar_max is None:
+        elif SUGAR not in diets_service_response_dict.keys():
             raise ValueError('ERROR: Diet JSON does not contain `sugar` value!')
-        # TODO: 4. Filter the meals dictionary by diet maximum cal rate, maximum sodium rate, and maximum sugar rate
-        # Filter meals
+        cal_max = diets_service_response_dict[CAL]
+        sodium_max = diets_service_response_dict[SODIUM]
+        sugar_max = diets_service_response_dict[SUGAR]
+        # 4. Filter the meals dictionary by diet maximum cal rate, maximum sodium rate, and maximum sugar rate
         filtered_meals = {
             meal_id: meal_details for meal_id, meal_details in meals.items() if
             (meal_details[CAL] <= cal_max) and
             (meal_details[SODIUM] <= sodium_max) and
             (meal_details[SUGAR] <= sugar_max)
         }
-        # TODO: 5. Test
         return jsonify(filtered_meals)
 
 
