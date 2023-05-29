@@ -1,7 +1,10 @@
+from typing import Tuple
+
 from flask import Flask, request, jsonify
+import flask
 import json
 import requests
-#from pymongo import MongoClient  # TODO: make this API interact with the MongoDB microservice
+from pymongo import MongoClient  # TODO: make this API interact with the MongoDB microservice
 
 # Constant global Variables
 NAME = 'name'               # For dishes
@@ -23,7 +26,7 @@ meal_id = 0                 # For meals
 API_KEY = 'MktCMe6vJqb/xCbZ10IBgA==5utKBDSANyr1ZXUN'
 
 
-def calculate_portions_values_sum(response_json):
+def calculate_portions_values_sum(response_json: dict) -> Tuple[float, float, float, float]:
     """
     The purpose of this function is to avoid exception for edge cases as mentioned here:
     https://mama.mta.ac.il/mod/forum/discuss.php?d=9130
@@ -31,23 +34,13 @@ def calculate_portions_values_sum(response_json):
     :return: The function calculates the sum of the values of the portions, and return these values - calories, serving
     size, sodium, sugar
     """
-    # We take out only relevant information from our JSON response, each variable is a list
-    all_calories = [dish['calories'] for dish in response_json]
-    all_serving_size_g = [dish['serving_size_g'] for dish in response_json]
-    all_sodium_mg = [dish['sodium_mg'] for dish in response_json]
-    all_sugar_g = [dish['sugar_g'] for dish in response_json]
-    # Now we sum the values of each list
-    calories = sum(all_calories)
-    serving_size_g = sum(all_serving_size_g)
-    sodium_mg = sum(all_sodium_mg)
-    sugar_g = sum(all_sugar_g)
     # Return each sum
-    return calories, serving_size_g, sodium_mg, sugar_g
+    return response_json['calories'], response_json['serving_size_g'], response_json['sodium_mg'], response_json['sugar_g']
 
 
 # Dishes
 @app.route('/dishes', methods=['POST'])
-def create_dish():
+def create_dish() -> flask.Response:
     """
     POST request of /dishes endpoint. Adds a dish with the given name in the JSONic body
     :return: ID of the new dish, if there are no edge cases
@@ -60,10 +53,10 @@ def create_dish():
     dish_name = request.json.get(NAME, None)
     if dish_name is None:                # Bad request: NAME parameter was not specified
         return str(-1), str(400)
-    response_json = get_dish_nutrition_info(dish_name)
-    if response_json is False:     # Bad request: does not recognize this dish name
+    response_json: dict = get_dish_nutrition_info(dish_name)
+    if response_json == {False}:     # Bad request: does not recognize this dish name
         return str(-3), str(400)
-    if response_json is True:      # Bad request: not reachable or some other server error
+    if response_json == {True}:      # Bad request: not reachable or some other server error
         return str(-4), str(400)
     response_id, response_code = validate_dish_json_parameters(dish_name, response_json)
     if response_id is not None:
@@ -84,50 +77,49 @@ def create_dish():
         return str(dish_id), str(response_code)
 
 
-def validate_dish_json_parameters(dish_name, response_json):
+def validate_dish_json_parameters(dish_name: str, response_json: dict) -> Tuple:
     """
     :param dish_name: Name of the dish we are adding, given in the original request. Type: str
     :param response_json: Response list of the original request (including query parameter NAME), given by Ninjas API
     :return: (None, 201) if the request is valid, (-2, 400) if the dish already exists, (-3, 400) if the dish does not
     exist in Ninjas API
     """
-    for current_nutrition_info in response_json:
-        if name_to_id_generator(dish_name, dishes) != -1:
-            return -2, 400  # Bad request: dish of given name already exists
-        elif current_nutrition_info is None:
-            return -3, 400  # Bad request: api.api-ninjas.com/v1/nutrition does not recognize this dish name
+    if name_to_id_generator(dish_name, dishes) != -1:
+        return -2, 400  # Bad request: dish of given name already exists
+    elif response_json is None:
+        return -3, 400  # Bad request: api.api-ninjas.com/v1/nutrition does not recognize this dish name
     return None, 201
 
 
-def name_to_id_generator(dish_name, values):
+def name_to_id_generator(dish_to_add_name: str, dishes: dict) -> int:
     """
-    :param dish_name: Name of the dish or meal we are adding, given in the original request. Type: str
-    :param values: A dictionary of dictionaries, each value represents a dish or a meal. Type: dict
+    :param dish_to_add_name: Name of the dish or meal we are adding, given in the original request. Type: str
+    :param dishes: A dictionary of dictionaries, each value represents a dish or a meal. Type: dict
     :return: Integer value of a dish or meal ID - positive if found, -1 if not
     """
-    for value in values.values():
-        if value[NAME] == dish_name:
-            return value[ID]
+    for dish in dishes.values():
+        if dish[NAME] == dish_to_add_name:
+            return dish[ID]
     return -1
 
 
-def get_dish_nutrition_info(dish_name):
+def get_dish_nutrition_info(dish_name: str) -> dict:
     """
     :param dish_name: Name of the dish we are adding, given in the original request. Type: str
     :return: Response for the original request (including quey parameter NAME), given by Ninjas API. Type: JSON
     """
     api_url = f'http://api.api-ninjas.com/v1/nutrition?query={dish_name}'
-    response = requests.get(api_url, headers={'X-Api-Key': API_KEY})
+    response: requests.models.Response = requests.get(api_url, headers={'X-Api-Key': API_KEY})
     if response.status_code != 200:
-        return True
-    data = response.json()
+        return {True}
+    data: list = response.json()
     if len(data) == 0:
-        return False
-    return data
+        return {False}
+    return data[0]
 
 
 @app.route('/dishes', methods=['GET'])
-def get_dishes():
+def get_dishes() -> flask.Response:
     """
     GET request of /dishes endpoint
     :return: JSON file of all dishes
@@ -136,87 +128,88 @@ def get_dishes():
 
 
 @app.route('/dishes/<dish_request>', methods=['GET'])
-def get_dish(dish_request):
+def get_dish(dish_request: str) -> flask.Response:
     """
     GET request of /dishes endpoint. Returns a dish with the given ID or name
     :param dish_request: Query parameter for GET request of /dishes endpoint. It may be an ID or a name of a given dish.
     :return: JSON of the dish for valid request, (-1, 400) if the query parameter is empty, (-5, 404) if the ID or name
     don't exist
     """
-    global dishes
+    global dishes, dish_id
     if (dish_request is None) or (dish_request == ""):
         # If neither the dish ID nor a dish name is specified, the GET or DELETE
         # request returns the response -1 with error code 400 (Bad request).
         return str(-1), str(400)
     elif dish_request.isdigit() is True:
-        dish_id = int(dish_request)
-        if str(dish_id) not in dishes:
+        dish = int(dish_request)
+        if str(dish) not in dishes:
             # # If dish name or dish ID does not exist,
             # the GET or DELETE request returns the response -5 with error code 404 (Not Found)
             return str(-5), str(404)
     else:
         dish_name = dish_request
-        dish_id = name_to_id_generator(dish_name, dishes)
-        if dish_id == -1:
+        dish = name_to_id_generator(dish_name, dishes)
+        if dish == -1:
             # # If dish name or dish ID does not exist,
             # the GET or DELETE request returns the response -5 with error code 404 (Not Found)
             return -5, 404
-    return jsonify(dishes[str(dish_id)]), str(200)
+    return jsonify(dishes[str(dish)]), str(200)
 
 
 @app.route('/dishes/<dish_request>', methods=['DELETE'])
-def delete_dish(dish_request):
+def delete_dish(dish_request: str) -> flask.Response:
     """
     DELETE request of /dishes endpoint. Deletes a dish with the given ID or name
     :param dish_request: Query param for DELETE request of /dishes endpoint
     :return: ID of the dish for valid request, (-1, 400) if the query parameter is empty, (-5, 404) if the ID or name
     don't exist
     """
-    global dishes
+    global dishes, dish_id
     if (dish_request is None) or (dish_request == ""):
         # If neither the dish ID nor a dish name is specified, the GET or DELETE
         # request returns the response -1 with error code 400 (Bad request).
         return str(-1), str(400)
     elif dish_request.isdigit() is True:
-        dish_id = int(dish_request)
-        if str(dish_id) not in dishes:
+        dish = int(dish_request)
+        if str(dish) not in dishes:
             # # If dish name or dish ID does not exist,
             # the GET or DELETE request returns the response -5 with error code 404 (Not Found)
             return str(-5), str(404)
     else:
         dish_name = dish_request
-        dish_id = name_to_id_generator(dish_name, dishes)
-        if dish_id == -1:
+        dish = name_to_id_generator(dish_name, dishes)
+        if dish == -1:
             # # If dish name or dish ID does not exist,
             # the GET or DELETE request returns the response -5 with error code 404 (Not Found)
             return str(-5), str(404)
 
     # Set the dish to null in all meals if it is part of a meal
+    dish = str(dish_id)
     for meal in meals.values():
         is_dish_in_meal = False
-        if meal[APPETIZER] == str(dish_id):
+        if meal[APPETIZER] == dish:
             meal[APPETIZER] = None
             is_dish_in_meal = True
-        elif meal[MAIN] == str(dish_id):
+        elif meal[MAIN] == dish:
             meal[MAIN] = None
             is_dish_in_meal = True
-        elif meal[DESSERT] == str(dish_id):
+        elif meal[DESSERT] == dish:
             meal[DESSERT] = None
             is_dish_in_meal = True
         # Update meal values
         if is_dish_in_meal is True:
-            meals[str(meal_id)][CAL] -= dishes[str(dish_id)][CAL]
-            meals[str(meal_id)][SODIUM] -= dishes[str(dish_id)][SODIUM]
-            meals[str(meal_id)][SUGAR] -= dishes[str(dish_id)][SUGAR]
+            meals[str(meal_id)][CAL] -= dishes[dish][CAL]
+            meals[str(meal_id)][SODIUM] -= dishes[dish][SODIUM]
+            meals[str(meal_id)][SUGAR] -= dishes[dish][SUGAR]
     # Remove dish from dishes
-    dishes.pop(str(dish_id))
+    dishes.pop(dish)
 
-    return str(dish_id), 200
+    return dish, 200
 
 
 # Meals
 @app.route('/meals', methods=['POST'])
-def create_meal():
+def create_meal() -> flask.Response:
     """
     A meal object is different from a dish object. While it also has the "cal", "sodium" and "sugar" fields,
     it does not have the serving "size" field.
@@ -271,7 +264,7 @@ def create_meal():
 
 
 @app.route('/meals', methods=['GET'])
-def get_meals():
+def get_meals() -> flask.Response:
     """
     GET request of /meals endpoint
     Also supports `GET /meals http://0.0.0.0:port/meals?<diet>` where <diet> gives the name of the diet.
@@ -290,17 +283,17 @@ def get_meals():
         # 2. Make a request: `GET /diet/<diet_name>`
         # 3. Get the relevant values from the JSON that was returned from the GET request
         # Get diet values from JSON
-        response = requests.get(f'http://localhost:5002/diet/{diet_name}')
-        diets_service_response_dict = json.loads(response.content)
-        if CAL not in diets_service_response_dict.keys():
+        response: requests.models.Response = requests.get(f'http://localhost:5002/diet/{diet_name}')
+        diets_service_response: dict = json.loads(response.content)
+        if CAL not in diets_service_response.keys():
             raise ValueError('ERROR: Diet JSON does not contain `cal` value!')
-        elif SODIUM not in diets_service_response_dict.keys():
+        elif SODIUM not in diets_service_response.keys():
             raise ValueError('ERROR: Diet JSON does not contain `sodium` value!')
-        elif SUGAR not in diets_service_response_dict.keys():
+        elif SUGAR not in diets_service_response.keys():
             raise ValueError('ERROR: Diet JSON does not contain `sugar` value!')
-        cal_max = diets_service_response_dict[CAL]
-        sodium_max = diets_service_response_dict[SODIUM]
-        sugar_max = diets_service_response_dict[SUGAR]
+        cal_max = diets_service_response[CAL]
+        sodium_max = diets_service_response[SODIUM]
+        sugar_max = diets_service_response[SUGAR]
         # 4. Filter the meals dictionary by diet maximum cal rate, maximum sodium rate, and maximum sugar rate
         filtered_meals = {
             meal_id: meal_details for meal_id, meal_details in meals.items() if
@@ -312,7 +305,7 @@ def get_meals():
 
 
 @app.route('/meals/<meal_request>', methods=['GET'])
-def get_meal(meal_request):
+def get_meal(meal_request: str) -> flask.Response:
     """
     GET request of /meals endpoint. Returns a meal with the given ID or name
     :param meal_request: Query param for GET request of /meals endpoint. It may be an ID or a name of a given meal.
@@ -341,7 +334,7 @@ def get_meal(meal_request):
 
 
 @app.route('/meals/<meal_request>', methods=['DELETE'])
-def delete_meal(meal_request):
+def delete_meal(meal_request: str) -> flask.Response:
     """
     DELETE request of /meals endpoint. Returns a meal with the given ID or name
     :param meal_request: Query param for DELETE request of /meals endpoint. It may be an ID or a name of a given meal.
@@ -372,7 +365,7 @@ def delete_meal(meal_request):
 
 
 @app.route('/meals/<meal_request>', methods=['PUT'])
-def update_meal(meal_request):
+def update_meal(meal_request: str) -> flask.Response:
     """
     PUT request of /meals endpoint. Returns a meal with the given ID or name
     :param meal_request: Query param for PUT request of /meals endpoint. It is an ID of a given meal.
