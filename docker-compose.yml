@@ -5,48 +5,47 @@ services:
       context: ./Meals
       dockerfile: Dockerfile
     ports:
-      - "5001:5001"
+      - '5001:5001'
     depends_on:
-      - mongodb
-    restart: unless-stopped  # Restart the container unless explicitly stopped
+      - diets
+    container_name: Meals_Container
+    restart: unless-stopped
     volumes:
-      - meals_data:/app/data  # Mount a volume to persist meals data
-
+      - 'meals_data:/app/data'
   diets:
     build:
       context: ./Diets
       dockerfile: Dockerfile
+    container_name: Diets_Container
     ports:
-      - "5002:5002"
+      - '5002:5002'
     depends_on:
       - mongodb
-    restart: unless-stopped  # Restart the container unless explicitly stopped
+    restart: unless-stopped
     volumes:
-      - diets_data:/app/data  # Mount a volume to persist diets data
-
+      - 'diets_data:/app/data'
   mongodb:
     build:
       context: ./MongoDB
       dockerfile: Dockerfile
+    container_name: MongoDB_Container
     ports:
-      - "27017:27017"
-    restart: unless-stopped  # Restart the container unless explicitly stopped
+      - '27017:27017'
+    restart: unless-stopped
     volumes:
-      - mongodb_data:/data/db  # Mount a volume to persist MongoDB data
-
+      - 'mongodb_data:/data/db'
   nginx:
-    build:
-      context: ./NGINX
-      dockerfile: Dockerfile
+    image: nginx:alpine
+    container_name: NGINX_Container
     ports:
-      - "80:80"
+      - "5000:80"
     depends_on:
       - meals
-      - diets
-      - mongodb
     restart: unless-stopped
-
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
 volumes:
-  meals_data:  # Define a named volume for meals data
-  diets_data:  # Define a named volume for diets data
-  mongodb_data:  # Define a named volume for MongoDB data
+  meals_data: null
+  diets_data: null
+  mongodb_data: null
