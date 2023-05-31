@@ -283,7 +283,7 @@ def get_meals() -> flask.Response:
         # 2. Make a request: `GET /diet/<diet_name>`
         # 3. Get the relevant values from the JSON that was returned from the GET request
         # Get diet values from JSON
-        response: requests.models.Response = requests.get(f'http://localhost:5002/diet/{diet_name}')
+        response: requests.models.Response = requests.get(f'http://localhost:5002/diets/{diet_name}')
         diets_service_response: dict = json.loads(response.content)
         if CAL not in diets_service_response.keys():
             raise ValueError('ERROR: Diet JSON does not contain `cal` value!')

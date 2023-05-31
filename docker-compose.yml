@@ -9,9 +9,8 @@ services:
     depends_on:
       - diets
     container_name: Meals_Container
-    restart: unless-stopped
-    volumes:
-      - 'meals_data:/app/data'
+    restart: always
+
   diets:
     build:
       context: ./Diets
@@ -21,9 +20,8 @@ services:
       - '5002:5002'
     depends_on:
       - mongodb
-    restart: unless-stopped
-    volumes:
-      - 'diets_data:/app/data'
+    restart: always
+
   mongodb:
     build:
       context: ./MongoDB
@@ -31,21 +29,13 @@ services:
     container_name: MongoDB_Container
     ports:
       - '27017:27017'
-    restart: unless-stopped
-    volumes:
-      - 'mongodb_data:/data/db'
+    restart: always
+
   nginx:
     image: nginx:alpine
     container_name: NGINX_Container
     ports:
-      - "5000:80"
+      - '80:80'
     depends_on:
       - meals
-    restart: unless-stopped
-    volumes:
-      - ./:/var/www
-      - ./nginx/conf.d/:/etc/nginx/conf.d/
-volumes:
-  meals_data: null
-  diets_data: null
-  mongodb_data: null
+    restart: always
