@@ -2,7 +2,7 @@ version: '3'
 services:
   meals:
     build:
-      context: ./meals
+      context: ./Meals
       dockerfile: Dockerfile
     ports:
       - '5001:5001'
@@ -13,7 +13,7 @@ services:
 
   diets:
     build:
-      context: ./diets
+      context: ./Diets
       dockerfile: Dockerfile
     container_name: Diets_Container
     ports:
@@ -24,7 +24,7 @@ services:
 
   mongodb:
     build:
-      context: ./mongoDB
+      context: ./MongoDB
       dockerfile: Dockerfile
     container_name: MongoDB_Container
     ports:
