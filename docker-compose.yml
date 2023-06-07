@@ -9,6 +9,7 @@ services:
     depends_on:
       - diets
     container_name: Meals_Container
+    restart: always
 
   diets:
     build:
@@ -18,6 +19,7 @@ services:
       - '5002:5002'
     depends_on:
       - mongodb
+    restart: always
 
   mongodb:
     build:
@@ -25,13 +27,15 @@ services:
     container_name: MongoDB_Container
     ports:
       - '27017:27017'
+    restart: always
 
   nginx:
     build: ./NGINX
     container_name: NGINX_Container
     ports:
-      - '80:80'
+      - '5000:80'
     depends_on:
       - meals
       - diets
       - mongodb
+    restart: always
