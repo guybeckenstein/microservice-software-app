@@ -1,41 +1,37 @@
 version: '3'
+
 services:
   meals:
     build:
       context: ./Meals
-      dockerfile: Dockerfile
     ports:
       - '5001:5001'
     depends_on:
       - diets
     container_name: Meals_Container
-    restart: always
 
   diets:
     build:
       context: ./Diets
-      dockerfile: Dockerfile
     container_name: Diets_Container
     ports:
       - '5002:5002'
     depends_on:
       - mongodb
-    restart: always
 
   mongodb:
     build:
       context: ./MongoDB
-      dockerfile: Dockerfile
     container_name: MongoDB_Container
     ports:
       - '27017:27017'
-    restart: always
 
   nginx:
-    image: nginx:alpine
+    build: ./NGINX
     container_name: NGINX_Container
     ports:
       - '80:80'
     depends_on:
       - meals
-    restart: always
+      - diets
+      - mongodb

@@ -81,7 +81,7 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": "{{diets_base_url}}/diet/low sodium"
+						"url": "{{diets_base_url}}/diets/low sodium"
 					},
 					"response": []
 				}
