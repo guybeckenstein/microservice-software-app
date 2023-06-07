@@ -10,6 +10,8 @@ services:
       - diets
     container_name: Meals_Container
     restart: always
+    volumes:
+      - ./MongoDB:/data/db
 
   diets:
     build:
@@ -20,6 +22,8 @@ services:
     depends_on:
       - mongodb
     restart: always
+    volumes:
+      - ./MongoDB:/data/db
 
   mongodb:
     build:
@@ -28,6 +32,8 @@ services:
     ports:
       - '27017:27017'
     restart: always
+    volumes:
+      - ./MongoDB:/data/db
 
   nginx:
     build: ./NGINX
