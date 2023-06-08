@@ -6,12 +6,12 @@ services:
       context: ./Meals
     ports:
       - '5001:5001'
+    networks:
+      - mongo-network
     depends_on:
       - diets
     container_name: Meals_Container
     restart: always
-    volumes:
-      - ./MongoDB:/data/db
 
   diets:
     build:
@@ -19,29 +19,31 @@ services:
     container_name: Diets_Container
     ports:
       - '5002:5002'
+    networks:
+      - mongo-network
     depends_on:
       - mongodb
     restart: always
-    volumes:
-      - ./MongoDB:/data/db
 
   mongodb:
-    build:
-      context: ./MongoDB
+    image: mongo:latest
     container_name: MongoDB_Container
     ports:
       - '27017:27017'
+    networks:
+      - mongo-network
     restart: always
-    volumes:
-      - ./MongoDB:/data/db
 
   nginx:
     build: ./NGINX
     container_name: NGINX_Container
     ports:
       - '5000:80'
+    networks:
+      - mongo-network
     depends_on:
       - meals
-      - diets
-      - mongodb
     restart: always
+
+networks:
+  mongo-network:

@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 import flask
 import json
 import requests
-from pymongo import MongoClient  # TODO: make this API interact with the MongoDB microservice
+from pymongo import MongoClient
 
 # MongoDB configuration
 client = MongoClient("mongodb://localhost:27017/")
