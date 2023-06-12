@@ -1,49 +1,55 @@
 version: '3'
 
 services:
-  meals:
-    build:
-      context: ./Meals
+  mongodb:
+    image: mongo:latest
+    container_name: MongoDB_Container
+    hostname: mongodb_host
     ports:
-      - '5001:5001'
+      - '27017:27017'
     networks:
-      - mongo-network
-    depends_on:
-      - diets
-    container_name: Meals_Container
+      - mongo_network
     restart: always
 
   diets:
     build:
       context: ./Diets
+      dockerfile: Dockerfile
     container_name: Diets_Container
     ports:
       - '5002:5002'
     networks:
-      - mongo-network
+      - mongo_network
     depends_on:
       - mongodb
     restart: always
 
-  mongodb:
-    image: mongo:latest
-    container_name: MongoDB_Container
+  meals:
+    build:
+      context: ./Meals
+      dockerfile: Dockerfile
+    container_name: Meals_Container
     ports:
-      - '27017:27017'
+      - '5001:5001'
     networks:
-      - mongo-network
+      - mongo_network
+    depends_on:
+      - diets
     restart: always
 
   nginx:
-    build: ./NGINX
+    build:
+      context: ./NGINX
+      dockerfile: Dockerfile
     container_name: NGINX_Container
     ports:
       - '5000:80'
     networks:
-      - mongo-network
+      - mongo_network
     depends_on:
       - meals
     restart: always
 
 networks:
-  mongo-network:
+  mongo_network:
+    driver: bridge

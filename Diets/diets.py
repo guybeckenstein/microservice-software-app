@@ -4,7 +4,7 @@ from flask import Flask, jsonify, request
 from pymongo import MongoClient
 
 # MongoDB configuration
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient('mongodb://MongoDB_Container/')
 db = client['ex2']  # database name
 diets_collection = db['diets']
 

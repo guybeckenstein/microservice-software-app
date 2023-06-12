@@ -6,7 +6,7 @@ import requests
 from pymongo import MongoClient
 
 # MongoDB configuration
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient('mongodb://MongoDB_Container/')
 db = client['ex2']  # database name
 dishes_collection = db['dishes']
 meals_collection = db['meals']
