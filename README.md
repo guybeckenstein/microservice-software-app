@@ -1,5 +1,5 @@
 # Microservices Architecture with Docker: A Modular Approach for Diet and Meal Management
-Developed a microservices-based architecture using `Docker` containers for a diet and meal management system.
+Developed a SaaS microservices-based architecture using Docker containers for a diet and meal management system, using `API Ninjas Recipe` – can make up to 50,000 API calls per month.
 
 The architecture consists of four services:
 <li><strong>Diets</strong></li>
@@ -7,9 +7,9 @@ The architecture consists of four services:
 <li><strong>NGINX</strong></li>
 <li><strong>MongoDB</strong></li>
 <br>
-Each service operates within its own package and contributes to the overall functionality. 
-
-_Diets_ and _Meals_ are `Flask` applications, _NGINX_ acts as a `reverse-proxy server`, and _MongoDB_ is used as the `database`. 
+Diets and Meals are Flask applications, NGINX acts as a reverse-proxy server (for GET requests), and MongoDB is used as the database.
+<br>
+docker-compose YAML file was also used.
 
 The services are connected through a bridge network, enabling seamless communication and data management. 
 The architecture offers scalability, modularity, and easy deployment, providing an efficient solution for managing diets and meals.
